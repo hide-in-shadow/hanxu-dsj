@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/assets/lib/layui/css/layui.css" />
+    <link rel="stylesheet" href="/assets/css/article/art_cate.css" />
+  </head>
+  <body>
+    <!-- 卡片区域 -->
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <span>文章类别管理</span>
+        <button type="button" class="layui-btn layui-btn-normal layui-btn-sm" id="btnAddCate">添加类别</button>
+      </div>
+      <div class="layui-card-body">
+        <table class="layui-table">
+          <colgroup>
+            <col />
+            <col />
+            <col width="200" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>分类名称</th>
+              <th>分类别名</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 表格数据的模板 -->
+    <script type="text/html" id="tpl-table">
+      {{each data}}
+      <tr>
+        <td>{{$value.name}}</td>
+        <td>{{$value.alias}}</td>
+        <td>
+          <button type="button" class="layui-btn layui-btn-xs btn-edit" data-id="{{$value.Id}}">编辑</button>
+          <button type="button" class="layui-btn layui-btn-danger layui-btn-xs btn-delete" data-id="{{$value.Id}}">删除</button>
+        </td>
+      </tr>
+      {{/each}}
+    </script>
+
+    <!-- 添加分类的弹出层 -->
+    <script type="text/html" id="dialog-add">
+      <form class="layui-form" id="form-add">
+        <div class="layui-form-item">
+          <label class="layui-form-label">分类名称</label>
+          <div class="layui-input-block">
+            <input type="text" name="name" required lay-verify="required" placeholder="请输入分类名称" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">分类别名</label>
+          <div class="layui-input-block">
+            <input type="text" name="alias" required lay-verify="required" placeholder="请输入分类别名" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="formDemo">确认添加</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+          </div>
+        </div>
+      </form>
+    </script>
+
+    <!-- 修改分类的弹出层 -->
+    <script type="text/html" id="dialog-edit">
+      <form class="layui-form" id="form-edit" lay-filter="form-edit">
+        <!-- 隐藏域，保存 Id 的值 -->
+        <input type="hidden" name="Id" />
+        <div class="layui-form-item">
+          <label class="layui-form-label">分类名称</label>
+          <div class="layui-input-block">
+            <input type="text" name="name" required lay-verify="required" placeholder="请输入分类名称" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">分类别名</label>
+          <div class="layui-input-block">
+            <input type="text" name="alias" required lay-verify="required" placeholder="请输入分类别名" autocomplete="off" class="layui-input" />
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="formDemo">确认修改</button>
+          </div>
+        </div>
+      </form>
+    </script>
+
+    <!-- 导入 layui 的js -->
+    <script src="/assets/lib/layui/layui.all.js"></script>
+    <!-- 导入 jQuery -->
+    <script src="/assets/lib/jquery.js"></script>
+    <!-- 导入 baseAPI -->
+    <script src="/assets/js/baseAPI.js"></script>
+    <!-- 导入模板引擎 -->
+    <script src="/assets/lib/template-web.js"></script>
+    <!-- 导入自己的 js -->
+    <script>
+      $(function () {
+        const layer = layui.layer
+        getDatalist()
+        // 获取 文章列表函数
+        function getDatalist() {
+          $.ajax({
+            method: 'GET',
+            url: '/my/article/cates',
+            success: function (res) {
+              var htmlStr = template('tpl-table', res)
+              $('tbody').html(htmlStr)
+            }
+          })
+        }
+
+        // 为添加类别按钮绑定点击事件
+        var indexAdd = null
+        $('#btnAddCate').on('click', function () {
+          // 对 插件的 遮罩层进行样式修饰
+          indexAdd = layer.open({
+            type: 1,
+            area: ['500px', '250px'],
+            title: '添加文章分类',
+            content: $('#dialog-add').html()
+          })
+        })
+
+        // 通过代理的形式，为 form-add 表单绑定 submit 添加事件
+        $('body').on('submit', '#form-add', function (e) {
+          e.preventDefault()
+          $.ajax({
+            method: 'POST',
+            url: '/my/article/addcates',
+            data: $(this).serialize(),
+            success: function (res) {
+              if (res.status !== 0) {
+                return layer.msg('新增分类失败！')
+              }
+              getDatalist()
+              layer.msg('新增分类成功！')
+              // 根据索引，关闭对应的弹出层
+              layer.close(indexAdd)
+            }
+          })
+        })
+
+        // 通过代理的形式，为 btn-edit 按钮绑定点击 获取当前项事件
+        var indexEdit = null
+        $('tbody').on('click', '.btn-edit', function () {
+          // 弹出一个修改文章分类信息的层
+          indexEdit = layer.open({
+            type: 1,
+            area: ['500px', '250px'],
+            title: '修改文章分类',
+            content: $('#dialog-edit').html()
+          })
+
+          var id = $(this).attr('data-id')
+          // 发起请求获取对应分类的数据   获取 需要修改的数据
+          $.ajax({
+            method: 'GET',
+            url: '/my/article/cates/' + id,
+            success: function (res) {
+              layui.form.val('form-edit', res.data)
+              getDatalist()
+            }
+          })
+        })
+
+        // 通过代理的形式，为修改分类的表单绑定 submit  修改事件
+        $('body').on('submit', '#form-edit', function (e) {
+          e.preventDefault()
+          $.ajax({
+            method: 'POST',
+            url: '/my/article/updatecate',
+            data: $(this).serialize(),
+            success: function (res) {
+              if (res.status !== 0) {
+                return layer.msg('更新分类数据失败！')
+              }
+              layer.msg('更新分类数据成功！')
+              layer.close(indexEdit)
+              getDatalist()
+            }
+          })
+        })
+
+        // 通过代理的形式，为删除按钮绑定点击事件
+        $('tbody').on('click', '.btn-delete', function () {
+          var id = $(this).attr('data-id')
+          // 提示用户是否要删除
+          layer.confirm('确认删除?', { icon: 3, title: '提示' }, function (index) {
+            $.ajax({
+              method: 'GET',
+              url: '/my/article/deletecate/' + id,
+              success: function (res) {
+                if (res.status !== 0) {
+                  return layer.msg('删除分类失败！')
+                }
+                layer.msg('删除分类成功！')
+                layer.close(index)
+                getDatalist()
+              }
+            })
+          })
+        })
+      })
+    </script>
+  </body>
+</html>
