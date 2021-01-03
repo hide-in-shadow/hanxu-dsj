@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 数据加工
+      const formatparams = (str) => {
+        // str.split('?') = ['','name=2514&age=18']
+        // str.split('?')[1].split('&') = ['name=2514','age=18']
+        let r = str.split('?')[1].split('&')
+        const obj = {}
+        for (let i = 0; i < r.length; i++) {
+          let arr = r[i].split('=')
+          obj[arr[0]] = arr[1]
+        }
+        return obj
+      }
+
+      //location.search
+      let ad = '?name=2514&age=18'
+      const obj = formatparams(ad)
+      console.log(obj)
+    </script>
+  </body>
+</html>
